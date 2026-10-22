@@ -1,0 +1,21 @@
+{
+  "name": "star-cinema-full",
+  "version": "1.0.0",
+  "private": true,
+  "description": "STAR Cinema local Kubernetes booking demo with Express and MySQL",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.12.0"
+  }
+}

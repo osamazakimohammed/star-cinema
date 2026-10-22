@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: star-cinema-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: star-cinema-frontend
+  template:
+    metadata:
+      labels:
+        app: star-cinema-frontend
+    spec:
+      containers:
+        - name: frontend
+          image: osamazakimohammed/star-cinema-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          resources:
+            requests:
+              cpu: 50m
+            limits:
+              cpu: 200m
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: star-cinema-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: star-cinema-backend
+  template:
+    metadata:
+      labels:
+        app: star-cinema-backend
+    spec:
+      containers:
+        - name: backend
+          image: osamazakimohammed/star-cinema-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: 100m
+            limits:
+              cpu: 500m
+          envFrom:
+            - configMapRef:
+                name: star-cinema-app
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: star-cinema-secrets
+                  key: JWT_SECRET
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: star-cinema-secrets
+                  key: DB_PASSWORD
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10

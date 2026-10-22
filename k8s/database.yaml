@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: star-cinema-db
+spec:
+  type: ClusterIP
+  selector:
+    app: star-cinema-db
+  ports:
+    - port: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: star-cinema-db-headless
+spec:
+  clusterIP: None
+  selector:
+    app: star-cinema-db
+  ports:
+    - port: 3306
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: star-cinema-db
+spec:
+  serviceName: star-cinema-db-headless
+  selector:
+    matchLabels:
+      app: star-cinema-db
+  template:
+    metadata:
+      labels:
+        app: star-cinema-db
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.4
+          ports:
+            - containerPort: 3306
+          env:
+            - name: MYSQL_DATABASE
+              value: star_cinema
+            - name: MYSQL_USER
+              value: database
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: star-cinema-secrets
+                  key: DB_PASSWORD
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: star-cinema-secrets
+                  key: DB_ROOT_PASSWORD
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "mysqladmin ping -h 127.0.0.1 -u root -p\"$MYSQL_ROOT_PASSWORD\" --silent"]
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+            - name: db-init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+      volumes:
+        - name: db-init
+          configMap:
+            name: star-cinema-db-init
+  volumeClaimTemplates:
+    - metadata:
+        name: mysql-data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 5Gi
